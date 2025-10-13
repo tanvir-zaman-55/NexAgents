@@ -1,0 +1,184 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-light: #ffffff;
+  --color-dark: #1e293b;
+  --gradient-start: #8b5cf6;
+  --gradient-middle: #ec4899;
+  --gradient-end: #6366f1;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Modern body styles with gradient background */
+body {
+  font-family:
+    "Inter Variable",
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    "Noto Sans",
+    sans-serif,
+    "Apple Color Emoji",
+    "Segoe UI Emoji",
+    "Segoe UI Symbol",
+    "Noto Color Emoji";
+  color: var(--color-dark);
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Animated gradient background blobs */
+.gradient-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.5;
+  animation: float 6s ease-in-out infinite;
+}
+
+.gradient-blob-1 {
+  top: -10%;
+  left: -10%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 70%);
+  animation-delay: 0s;
+}
+
+.gradient-blob-2 {
+  top: 20%;
+  right: -10%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(236, 72, 153, 0.3) 0%, transparent 70%);
+  animation-delay: 2s;
+}
+
+.gradient-blob-3 {
+  bottom: -10%;
+  left: 30%;
+  width: 450px;
+  height: 450px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, transparent 70%);
+  animation-delay: 4s;
+}
+
+/* Glassmorphism card effect */
+.glass-card {
+  @apply bg-white/80 backdrop-blur-lg border border-white/20 shadow-xl;
+}
+
+/* Modern auth input field with enhanced focus */
+.auth-input-field {
+  @apply w-full px-4 py-3.5 rounded-container bg-white/90 border border-gray-200
+         focus:border-primary-400 focus:ring-2 focus:ring-primary-200
+         outline-none transition-all duration-200 shadow-sm hover:shadow-md
+         placeholder:text-gray-400 text-gray-700 font-medium;
+}
+
+.auth-input-field:focus {
+  @apply bg-white;
+}
+
+/* Primary auth button with gradient */
+.auth-button {
+  @apply w-full px-4 py-3.5 rounded-container font-semibold text-white
+         transition-all duration-200 shadow-md hover:shadow-lg
+         disabled:opacity-50 disabled:cursor-not-allowed
+         relative overflow-hidden transform hover:scale-[1.02] active:scale-[0.98];
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+.auth-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.auth-button:hover::before {
+  opacity: 1;
+}
+
+.auth-button span {
+  position: relative;
+  z-index: 1;
+}
+
+/* Google auth button specific styling */
+.auth-button-google {
+  @apply w-full px-4 py-3.5 rounded-container font-semibold
+         bg-white border-2 border-gray-200 hover:border-gray-300
+         text-gray-700 hover:bg-gray-50
+         transition-all duration-200 shadow-sm hover:shadow-md
+         disabled:opacity-50 disabled:cursor-not-allowed
+         transform hover:scale-[1.02] active:scale-[0.98]
+         flex items-center justify-center gap-3;
+}
+
+/* Text utilities */
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-500 via-accent to-primary-700;
+}
+
+/* Accent text with modern color */
+.accent-text {
+  @apply text-slate-500;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full hover:bg-gray-400;
+}
+
+/* Animation utilities */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-20px) scale(1.05);
+  }
+}
+
+/* Loading spinner */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

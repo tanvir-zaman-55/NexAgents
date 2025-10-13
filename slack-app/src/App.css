@@ -1,0 +1,42 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #fff;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 12px 20px;
+  background: #350d36;
+  color: white;
+  border-bottom: 1px solid #522653;
+}
+
+.header h1 {
+  font-size: 18px;
+  font-weight: 900;
+  margin: 0;
+}
+
+.profile-button {
+  margin-left: auto;
+  padding: 8px 16px;
+  background: #4a154b;
+  color: white;
+  border: 1px solid #522653;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.profile-button:hover {
+  background: #611f69;
+}
+
+.main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}

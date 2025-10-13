@@ -1,0 +1,7 @@
+packages:
+  - 'chefshot'
+  - 'test-kitchen'
+  - 'chef-agent'
+  - 'mcp-server'
+  # You can add more workspace packages here later if needed
+  # - "packages/*"

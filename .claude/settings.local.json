@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(jobs:*)",
+      "Bash(npx tsc:*)",
+      "Bash(cat:*)",
+      "Bash(pkill:*)",
+      "WebSearch",
+      "Bash(npm install:*)",
+      "Bash(pnpm add:*)",
+      "Bash(claude --version)",
+      "Bash(lsof:*)",
+      "Bash(pnpm dev:*)",
+      "Bash(pgrep:*)",
+      "Bash(curl -s http://127.0.0.1:5173)",
+      "Read(//tmp/**)",
+      "Bash(kill:*)",
+      "Bash(xargs -r kill -9)",
+      "Bash(curl:*)",
+      "Bash(npx convex:*)",
+      "Bash(pnpm init:*)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm run:*)",
+      "Bash(pnpm --filter chef-mcp-server run build)",
+      "Read(//mnt/c/Users/Iaz/Downloads/chef-main3/**)",
+      "Bash(chmod:*)",
+      "Bash(./scripts/verify-claude-code-setup.sh:*)",
+      "Bash(./scripts/toggle-claude-code.sh:*)",
+      "WebFetch(domain:webcontainers.io)",
+      "Bash(node:*)",
+      "Bash(find:*)",
+      "Bash(claude auth status)",
+      "WebFetch(domain:labs.convex.dev)"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "disabledMcpjsonServers": [
+    "chef"
+  ]
+}
