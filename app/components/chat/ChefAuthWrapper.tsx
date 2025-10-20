@@ -89,20 +89,26 @@ export const ChefAuthProvider = ({
 
     async function verifySession() {
       if (sessionIdFromLocalStorage) {
-        // Seems like auth might not automatically refresh its state, so call this to kick it
-        try {
-          // Call this to prove that WorkOS is set up
-          await getAccessToken({});
-          authRetries.current = 0;
-        } catch (_e) {
-          console.error('Unable to fetch access token from WorkOS');
-          if (authRetries.current < 3 && verifySessionTimeout === null) {
-            authRetries.current++;
-            verifySessionTimeout = setTimeout(() => {
-              void verifySession();
-            }, 1000);
+        // DEV MODE: Skip WorkOS authentication check for local development
+        const isDevelopment = import.meta.env.DEV;
+        if (!isDevelopment) {
+          // Seems like auth might not automatically refresh its state, so call this to kick it
+          try {
+            // Call this to prove that WorkOS is set up
+            await getAccessToken({});
+            authRetries.current = 0;
+          } catch (_e) {
+            console.error('Unable to fetch access token from WorkOS');
+            if (authRetries.current < 3 && verifySessionTimeout === null) {
+              authRetries.current++;
+              verifySessionTimeout = setTimeout(() => {
+                void verifySession();
+              }, 1000);
+            }
+            return;
           }
-          return;
+        } else {
+          console.log('DEV MODE: Skipping WorkOS authentication');
         }
         if (!isAuthenticated) {
           // Wait until auth is propagated to Convex before we try to verify the session

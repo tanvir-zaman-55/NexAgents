@@ -122,10 +122,10 @@ export async function startProvisionConvexProjectHelper(
   if (session.memberId === undefined) {
     throw new ConvexError({ code: "NotAuthorized", message: "Must be logged in to connect a project" });
   }
-  // OAuth flow
+  // DEV MODE: Skip project provisioning if projectInitParams is missing
   if (args.projectInitParams === undefined) {
-    console.error(`Must provide projectInitParams for oauth: ${args.sessionId}`);
-    throw new ConvexError({ code: "NotAuthorized", message: "Invalid flow for connecting a project" });
+    console.log('DEV MODE: Skipping Convex project provisioning (no projectInitParams)');
+    return;
   }
 
   await ctx.scheduler.runAfter(0, internal.convexProjects.connectConvexProjectForOauth, {

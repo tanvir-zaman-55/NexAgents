@@ -49,25 +49,32 @@ export function useHomepageInitializeChat(chatId: string, setChatInitialized: (c
       projectInitParams,
     });
 
-    try {
-      // Wait for the Convex project to be successfully created before allowing chat to start
-      await Promise.race([
-        waitForConvexProjectConnection(),
-        new Promise((_, reject) => {
-          setTimeout(() => {
-            reject(new Error('Connection timeout'));
-          }, CREATE_PROJECT_TIMEOUT);
-        }),
-      ]);
+    // DEV MODE: Skip project connection wait for local development
+    const isDevelopment = import.meta.env.DEV;
+    if (isDevelopment) {
+      console.log('DEV MODE: Skipping Convex project connection wait');
       setChatInitialized(true);
-    } catch (error) {
-      console.error('Failed to create Convex project:', error);
-      if (error instanceof Error && error.message === 'Connection timeout') {
-        toast.error('Connection timed out. Please try again.');
-      } else {
-        toast.error('Failed to create Convex project. Please try again.');
+    } else {
+      try {
+        // Wait for the Convex project to be successfully created before allowing chat to start
+        await Promise.race([
+          waitForConvexProjectConnection(),
+          new Promise((_, reject) => {
+            setTimeout(() => {
+              reject(new Error('Connection timeout'));
+            }, CREATE_PROJECT_TIMEOUT);
+          }),
+        ]);
+        setChatInitialized(true);
+      } catch (error) {
+        console.error('Failed to create Convex project:', error);
+        if (error instanceof Error && error.message === 'Connection timeout') {
+          toast.error('Connection timed out. Please try again.');
+        } else {
+          toast.error('Failed to create Convex project. Please try again.');
+        }
+        return false;
       }
-      return false;
     }
 
     // Wait for the WebContainer to have its snapshot loaded before sending a message.

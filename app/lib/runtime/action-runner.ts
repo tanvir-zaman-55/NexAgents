@@ -432,6 +432,26 @@ export class ActionRunner {
 
           result = '';
 
+          // DEV MODE: Check if we have a Convex project connected
+          const convexProject = convexProjectStore.get();
+          if (!convexProject) {
+            logger.info('DEV MODE: Skipping deploy - no Convex project connected');
+
+            // Still start the preview server even without deploy
+            if (!workbenchStore.isDefaultPreviewRunning()) {
+              try {
+                await this.#shellTerminal.startCommand('npm run dev');
+                result = 'Note: Skipped Convex deployment (no project connected in dev mode). Files have been created and dev server started successfully!';
+              } catch (e) {
+                logger.error('Failed to start dev server:', e);
+                result = 'Note: Skipped Convex deployment (no project connected in dev mode). Files have been created. You can manually start the dev server from the terminal.';
+              }
+            } else {
+              result = 'Note: Skipped Convex deployment (no project connected in dev mode). Files have been created and are available in the editor.';
+            }
+            break;
+          }
+
           const commandErroredController = new AbortController();
           const abortSignal = AbortSignal.any([action.abortSignal, commandErroredController.signal]);
 

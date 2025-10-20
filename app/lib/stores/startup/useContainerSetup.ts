@@ -118,26 +118,53 @@ async function setupContainer(
     }
   }
 
+  // Try to set up Convex project if one is available, but don't block on it
+  // This allows the container to boot even if no project has been connected yet
   setContainerBootState(ContainerBootState.SETTING_UP_CONVEX_PROJECT);
-  const convexProject = await waitForConvexProjectConnection();
+  try {
+    // Wait for project with a short timeout (5 seconds) rather than the full 30 seconds
+    const convexProject = await Promise.race([
+      waitForConvexProjectConnection(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000)),
+    ]);
 
-  setContainerBootState(ContainerBootState.SETTING_UP_CONVEX_ENV_VARS);
-  await setupConvexEnvVars(container, convexProject);
-  try {
-    await setupOpenAIToken(convex, convexProject);
-    await setupResendToken(convex, convexProject);
+    if (convexProject) {
+      setContainerBootState(ContainerBootState.SETTING_UP_CONVEX_ENV_VARS);
+      await setupConvexEnvVars(container, convexProject);
+      try {
+        await setupOpenAIToken(convex, convexProject);
+        await setupResendToken(convex, convexProject);
+      } catch (error: any) {
+        // If environment variable queries fail, log but don't fail the whole setup
+        // This can happen if the project is still being provisioned
+        console.warn('Warning: Failed to setup proxy tokens:', error.message);
+      }
+      setContainerBootState(ContainerBootState.CONFIGURING_CONVEX_AUTH);
+      try {
+        await initializeConvexAuth(convexProject);
+      } catch (error: any) {
+        // If environment variable queries fail, log but don't fail the whole setup
+        // This can happen if the project is still being provisioned or system APIs aren't available yet
+        console.warn('Warning: Failed to initialize Convex Auth:', error.message);
+      }
+    } else {
+      console.log('⏭️ No Convex project connected yet - skipping project setup. User can connect a project later.');
+
+      // DEV MODE: Set up Convex URL from environment if available
+      const envConvexUrl = import.meta.env.VITE_CONVEX_URL;
+      if (envConvexUrl) {
+        console.log('DEV MODE: Setting up Convex URL from environment:', envConvexUrl);
+        await appendEnvVarIfNotSet({
+          envFilePath: '.env.local',
+          readFile: (path) => container.fs.readFile(path, 'utf-8'),
+          writeFile: (path, content) => container.fs.writeFile(path, content),
+          envVarName: 'VITE_CONVEX_URL',
+          value: envConvexUrl,
+        });
+      }
+    }
   } catch (error: any) {
-    // If environment variable queries fail, log but don't fail the whole setup
-    // This can happen if the project is still being provisioned
-    console.warn('Warning: Failed to setup proxy tokens:', error.message);
-  }
-  setContainerBootState(ContainerBootState.CONFIGURING_CONVEX_AUTH);
-  try {
-    await initializeConvexAuth(convexProject);
-  } catch (error: any) {
-    // If environment variable queries fail, log but don't fail the whole setup
-    // This can happen if the project is still being provisioned or system APIs aren't available yet
-    console.warn('Warning: Failed to initialize Convex Auth:', error.message);
+    console.warn('Warning: Failed to setup Convex project:', error.message);
   }
 
   setContainerBootState(ContainerBootState.STARTING_BACKUP);
