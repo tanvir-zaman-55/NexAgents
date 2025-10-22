@@ -16,6 +16,25 @@ export type { BadgeProps } from "./badge";
 export { Label } from "./label";
 export type { LabelProps } from "./label";
 
+// Layout & Navigation Components
+export { Navigation } from "./navigation";
+export type { NavigationProps, NavigationLink } from "./navigation";
+
+export { Tabs, TabsList, TabsTrigger, TabsContent } from "./tabs";
+
+export { Separator } from "./separator";
+
+// Overlay Components
+export { Dialog, DialogPortal, DialogOverlay, DialogClose, DialogTrigger, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "./dialog";
+
+export { Popover, PopoverTrigger, PopoverContent } from "./popover";
+
+// Form Components
+export { Select, SelectGroup, SelectValue, SelectTrigger, SelectContent, SelectLabel, SelectItem, SelectSeparator, SelectScrollUpButton, SelectScrollDownButton } from "./select";
+
+export { Calendar } from "./calendar";
+export type { CalendarProps } from "./calendar";
+
 // Advanced UI Components
 export { StarRating } from "./star-rating";
 export type { StarRatingProps } from "./star-rating";
@@ -38,5 +57,5 @@ export type { TestimonialCardProps } from "./testimonial-card";
 export { TeamCard } from "./team-card";
 export type { TeamCardProps, TeamMemberSocial } from "./team-card";
 
-export { Navigation } from "./navigation";
-export type { NavigationProps, NavigationLink } from "./navigation";
+// Loading States
+export { Skeleton } from "./skeleton";

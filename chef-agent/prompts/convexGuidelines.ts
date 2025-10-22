@@ -4,6 +4,164 @@ import type { SystemPromptOptions } from '../types.js';
 export function convexGuidelines(options: SystemPromptOptions) {
   return stripIndents`# Convex guidelines
 
+## Authentication System
+
+This template includes a **simple authentication system** in \`convex/simpleAuth.ts\`.
+
+### CRITICAL: DO NOT use @convex-dev/auth
+
+**NEVER import or use the @convex-dev/auth package**. The template uses a custom simple auth system instead.
+
+**DO NOT use:**
+- \`@convex-dev/auth/server\`
+- \`@convex-dev/auth/react\`
+- \`getAuthUserId()\` from @convex-dev/auth
+- \`ConvexProviderWithAuth\` or \`ConvexProviderWithClerk\`
+- \`authTables\` from @convex-dev/auth
+
+### Simple Auth API
+
+The template provides these authentication functions in \`convex/simpleAuth.ts\`:
+
+**Mutations:**
+- \`api.simpleAuth.signUp({ email: string, password: string, name?: string })\`
+  - Creates a new user account
+  - Returns: \`{ userId: Id<"users">, email: string }\`
+  - Throws error if email already exists
+
+- \`api.simpleAuth.signIn({ email: string, password: string })\`
+  - Authenticates a user
+  - Returns: \`{ userId: Id<"users">, email: string, name: string, role: string }\`
+  - Throws error if credentials are invalid
+
+**Queries:**
+- \`api.simpleAuth.getUser({ userId: Id<"users"> })\`
+  - Gets user data by ID
+  - Returns: \`{ _id, email, name, role } | null\`
+
+- \`api.simpleAuth.isAdmin({ userId: Id<"users"> })\`
+  - Checks if user is admin
+  - Returns: \`boolean\`
+
+### Frontend Authentication Pattern
+
+**React Provider Setup:**
+\`\`\`tsx
+// Use plain ConvexProvider (NOT ConvexProviderWithAuth)
+import { ConvexProvider, ConvexReactClient } from "convex/react";
+
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL);
+
+<ConvexProvider client={convex}>
+  <App />
+</ConvexProvider>
+\`\`\`
+
+**Authentication Flow:**
+\`\`\`tsx
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../convex/_generated/api";
+import type { Id } from "../convex/_generated/dataModel";
+
+function App() {
+  const [userId, setUserId] = useState<Id<"users"> | null>(null);
+
+  // Sign up
+  const signUp = useMutation(api.simpleAuth.signUp);
+  const handleSignUp = async (email: string, password: string) => {
+    const result = await signUp({ email, password });
+    setUserId(result.userId);
+    localStorage.setItem("userId", result.userId);
+  };
+
+  // Sign in
+  const signIn = useMutation(api.simpleAuth.signIn);
+  const handleSignIn = async (email: string, password: string) => {
+    const result = await signIn({ email, password });
+    setUserId(result.userId);
+    localStorage.setItem("userId", result.userId);
+  };
+
+  // Get current user
+  const currentUser = useQuery(
+    api.simpleAuth.getUser,
+    userId ? { userId } : "skip"
+  );
+
+  // Sign out
+  const handleSignOut = () => {
+    setUserId(null);
+    localStorage.removeItem("userId");
+  };
+}
+\`\`\`
+
+### Backend Authentication Pattern
+
+To check authentication in backend functions, accept a \`userId\` parameter:
+
+\`\`\`ts
+import { query, mutation } from "./_generated/server";
+import { v } from "convex/values";
+
+export const getUserData = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    // User is authenticated, proceed with query
+    return { /* user data */ };
+  },
+});
+
+export const createItem = mutation({
+  args: {
+    userId: v.id("users"),
+    title: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId);
+    if (!user) {
+      throw new Error("Not authenticated");
+    }
+
+    // Check if admin
+    if (user.role !== "admin") {
+      throw new Error("Not authorized");
+    }
+
+    // Create the item
+    return await ctx.db.insert("items", {
+      userId: args.userId,
+      title: args.title,
+      createdAt: Date.now(),
+    });
+  },
+});
+\`\`\`
+
+### Users Schema
+
+The users table has this structure:
+\`\`\`ts
+users: defineTable({
+  email: v.string(),
+  passwordHash: v.string(),
+  name: v.string(),
+  role: v.optional(v.string()), // "admin" or "user"
+  createdAt: v.number(),
+}).index("by_email", ["email"])
+\`\`\`
+
+### Default Admin Account
+
+For testing, use these credentials:
+- Email: \`admin@example.com\`
+- Password: \`admin123\`
+- Role: \`admin\`
+
 ## Function guidelines
 
 ### New function syntax
@@ -721,13 +879,8 @@ import {
 import { v } from "convex/values";
 import OpenAI from "openai";
 import { internal } from "./_generated/api";
-import { getAuthUserId } from "@convex-dev/auth/server";
-
-async function getLoggedInUser(ctx: QueryCtx) {
-  const userId = await getAuthUserId(ctx);
-  if (!userId) {
-    throw new Error("User not found");
-  }
+// Helper function to get user (auth is passed as userId parameter)
+async function getUser(ctx: QueryCtx | MutationCtx, userId: Id<"users">) {
   const user = await ctx.db.get(userId);
   if (!user) {
     throw new Error("User not found");
@@ -740,10 +893,11 @@ async function getLoggedInUser(ctx: QueryCtx) {
  */
 export const createChannel = mutation({
   args: {
+    userId: v.id("users"),
     name: v.string(),
   },
   handler: async (ctx, args) => {
-    await getLoggedInUser(ctx);
+    await getUser(ctx, args.userId);
     return await ctx.db.insert("channels", { name: args.name });
   },
 });
@@ -753,13 +907,14 @@ export const createChannel = mutation({
  */
 export const listMessages = query({
   args: {
+    userId: v.id("users"),
     channelId: v.id("channels"),
   },
   handler: async (ctx, args) => {
-    await getLoggedInUser(ctx);
+    await getUser(ctx, args.userId);
     const messages = await ctx.db
       .query("messages")
-      .withIndex("by_channel_and_author", (q) => q.eq("channelId", args.channelId).eq("authorId", args.authorId))
+      .withIndex("by_channel_and_author", (q) => q.eq("channelId", args.channelId))
       .order("desc")
       .take(10);
     return messages;
@@ -771,11 +926,12 @@ export const listMessages = query({
  */
 export const listMessagesByUser = query({
   args: {
+    userId: v.id("users"),
     channelId: v.id("channels"),
     authorId: v.id("users"),
   },
   handler: async (ctx, args) => {
-    await getLoggedInUser(ctx);
+    await getUser(ctx, args.userId);
     const messages = await ctx.db
       .query("messages")
       .withIndex("by_channel_and_author", (q) => q.eq("channelId", args.channelId).eq("authorId", args.authorId))
@@ -790,23 +946,19 @@ export const listMessagesByUser = query({
  */
 export const sendMessage = mutation({
   args: {
+    userId: v.id("users"),
     channelId: v.id("channels"),
-    authorId: v.id("users"),
     content: v.string(),
   },
   handler: async (ctx, args) => {
-    await getLoggedInUser(ctx);
+    const user = await getUser(ctx, args.userId);
     const channel = await ctx.db.get(args.channelId);
     if (!channel) {
       throw new Error("Channel not found");
     }
-    const user = await ctx.db.get(args.authorId);
-    if (!user) {
-      throw new Error("User not found");
-    }
     await ctx.db.insert("messages", {
       channelId: args.channelId,
-      authorId: args.authorId,
+      authorId: args.userId,
       content: args.content,
     });
     await ctx.scheduler.runAfter(0, internal.functions.generateResponse, {
@@ -897,9 +1049,16 @@ Path: \`convex/schema.ts\`
 \`\`\`ts
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { authTables } from "@convex-dev/auth/server";
 
-const applicationTables = {
+export default defineSchema({
+  users: defineTable({
+    email: v.string(),
+    passwordHash: v.string(),
+    name: v.string(),
+    role: v.optional(v.string()),
+    createdAt: v.number(),
+  }).index("by_email", ["email"]),
+
   channels: defineTable({
     name: v.string(),
   }),
@@ -909,11 +1068,6 @@ const applicationTables = {
     authorId: v.optional(v.id("users")),
     content: v.string(),
   }).index("by_channel_and_author", ["channelId", "authorId"]),
-};
-
-export default defineSchema({
-  ...authTables,
-  ...applicationTables,
 });
 \`\`\`
 
